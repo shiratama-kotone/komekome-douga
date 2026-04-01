@@ -1,5 +1,5 @@
 // ===== コメコメ動画 script.js =====
-const socket = io("https://your-render-url");
+const socket = io("https://komekome-server.onrender.com/");
 
 let player;
 let videoId = "";
