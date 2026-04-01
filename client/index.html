@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>コメコメ動画</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.youtube.com/iframe_api"></script>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+
+<input id="searchBox" placeholder="YouTube検索">
+<button onclick="search()">検索</button>
+
+<div id="results"></div>
+<h2 id="videoTitle"></h2>
+
+<div id="playerWrap">
+  <div id="player"></div>
+  <div id="comments"></div>
+</div>
+
+<div id="list"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
