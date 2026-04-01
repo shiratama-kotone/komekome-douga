@@ -1,11 +1,10 @@
-// ===== komekome-server: YouTube検索 + コメント =====
+// ===== komekome-server: コメント =====
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const { Pool } = require("pg");
 const jwt = require("jsonwebtoken");
-const { YouTubeSearchApi } = require("youtube-search-api");
 
 const SECRET = "your-secret-key";
 
@@ -67,26 +66,6 @@ app.get("/comments", async (req, res) => {
     [videoId]
   );
   res.json(result.rows);
-});
-
-// ===== 非公式YouTube検索 =====
-app.get("/search", async (req, res) => {
-  const q = req.query.q;
-  if (!q) return res.json([]);
-  try {
-    const results = await YouTubeSearchApi.GetListByKeyword(q, false, 10);
-    const videos = results.items
-      .filter(item => item.type === "video")
-      .map(item => ({
-        videoId: item.id,
-        title: item.title,
-        thumbnail: item.bestThumbnail.url
-      }));
-    res.json(videos);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "検索失敗" });
-  }
 });
 
 server.listen(3000, () => console.log("Server started on port 3000"));
