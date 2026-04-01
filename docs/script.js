@@ -1,100 +1,135 @@
-const socket = io("https://your-render-url");
+const socket = io("https://komekome-server.onrender.com");
 let token = localStorage.getItem("token");
-let player;
-let videoId = "";
-let allComments = [];
+let player, videoId, allComments=[], lastTime=0;
+let blocked = JSON.parse(localStorage.getItem("block")||"[]");
+const lanes = [], laneHeight=30;
 
-// ===== 登録・ログイン =====
-async function register(){
-  const name = document.getElementById("loginName").value;
-  const pass = document.getElementById("loginPassword").value;
-  const res = await fetch("https://your-render-url/register",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({name,password:pass})
-  });
+// ===== ログイン/登録 =====
+async function login() {
+  const name=document.getElementById("name").value;
+  const pw=document.getElementById("password").value;
+  const res = await fetch("/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,password:pw})});
   const data = await res.json();
-  document.getElementById("loginStatus").textContent = data.error || "登録成功！ログインしてね";
+  if(data.token){ token=data.token; localStorage.setItem("token",token); showMain(); } 
+  else document.getElementById("loginMsg").textContent = data.error;
 }
 
-async function login(){
-  const name = document.getElementById("loginName").value;
-  const pass = document.getElementById("loginPassword").value;
-  const res = await fetch("https://your-render-url/login",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({name,password:pass})
-  });
+async function register() {
+  const name=document.getElementById("name").value;
+  const pw=document.getElementById("password").value;
+  const res = await fetch("/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,password:pw})});
   const data = await res.json();
-  if(data.token){
-    token = data.token;
-    localStorage.setItem("token", token);
-    document.getElementById("loginForm").style.display="none";
-    document.getElementById("mainContent").style.display="block";
-  }else{
-    document.getElementById("loginStatus").textContent = data.error;
-  }
+  document.getElementById("loginMsg").textContent = data.success ? "登録完了" : data.error;
 }
 
-// ===== 動画再生 =====
-function loadVideo(){
-  const url = document.getElementById("videoUrl").value;
-  const match = url.match(/v=([a-zA-Z0-9_-]{11})/);
-  if(!match) return alert("URLが不正");
-  videoId = match[1];
-  if(player) player.loadVideoById(videoId);
-  else player = new YT.Player("player",{videoId});
+// ===== UI表示 =====
+function showMain() {
+  document.getElementById("loginWrap").style.display="none";
+  document.getElementById("mainWrap").style.display="block";
+}
+
+// ===== 動画 =====
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player("player");
+}
+
+function loadVideo() {
+  const url=document.getElementById("videoUrl").value;
+  const match=url.match(/v=([a-zA-Z0-9_-]+)/);
+  if(!match) return alert("正しいURL入れて");
+  videoId=match[1];
+  player.loadVideoById(videoId);
   fetchComments();
 }
 
 // ===== コメント同期 =====
-async function fetchComments(){
-  const res = await fetch(`https://your-render-url/comments?videoId=${videoId}`,{
-    headers:{Authorization:token}
-  });
-  allComments = (await res.json()).map(c=>({...c,shown:false}));
-  renderCommentList();
+function getFreeLane() {
+  for(let i=0;i<lanes.length;i++){ if(Date.now()>lanes[i]) return i; }
+  lanes.push(0); return lanes.length-1;
 }
 
-// ===== コメント投稿 =====
-async function postComment(){
-  const text = document.getElementById("commentText").value;
-  const size = document.getElementById("commentSize").value;
-  const pos = document.getElementById("commentPos").value;
-  const color = document.getElementById("commentColor").value;
+function renderComment(c) {
+  if(c.deleted||blocked.includes(c.user_name)) return;
+  const el=document.createElement("div");
+  el.className="comment";
+  let text=c.text;
+  if(c.is_admin) text=`<span class="adminBadge">運営</span> ${text}`;
+  el.innerHTML=text;
+  el.style.color=c.color||"white";
 
-  const res = await fetch("https://your-render-url/comment",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json","Authorization":token },
-    body:JSON.stringify({videoId,text,time:player.getCurrentTime(),size,pos,color})
-  });
-  const data = await res.json();
-  allComments.push({...data,shown:false});
-  renderCommentList();
+  if(c.size==="small") el.style.fontSize="14px";
+  if(c.size==="medium") el.style.fontSize="20px";
+  if(c.size==="large") el.style.fontSize="30px";
+
+  const duration = c.position==="flow" ? Math.min(8,Math.max(4,c.text.length/5)) : 3;
+  const lane=getFreeLane();
+
+  if(c.position==="flow"){
+    el.style.top=(lane*laneHeight)+"px";
+    el.style.animation=`flow ${duration}s linear`;
+    lanes[lane]=Date.now()+duration*800;
+    setTimeout(()=>el.remove(),duration*1000);
+  } else {
+    if(c.position==="top") el.style.top=(lane*laneHeight)+"px";
+    if(c.position==="middle") el.style.top=(200+lane*laneHeight)+"px";
+    if(c.position==="bottom") el.style.bottom=(lane*laneHeight)+"px";
+    lanes[lane]=Date.now()+3000;
+    setTimeout(()=>el.remove(),3000);
+  }
+  document.getElementById("comments").appendChild(el);
+
+  // コメントリスト
+  const li=document.createElement("li");
+  li.textContent=`[${c.time.toFixed(1)}] ${c.user_name}: ${c.text}`;
+  const delBtn=document.createElement("button");
+  delBtn.textContent="削除";
+  delBtn.onclick=()=>deleteComment(c.id);
+  li.appendChild(delBtn);
+  document.getElementById("commentList").appendChild(li);
 }
 
-// ===== コメントリスト描画 =====
-function renderCommentList(){
-  const list = document.getElementById("commentList");
-  list.innerHTML="";
+async function fetchComments() {
+  const res=await fetch(`/comments?videoId=${videoId}`,{headers:{Authorization:token}});
+  const data=await res.json();
+  allComments=data.map(c=>({...c,shown:false}));
+}
+
+function syncLoop() {
+  if(!player||!player.getCurrentTime) return;
+  const t=player.getCurrentTime();
   allComments.forEach(c=>{
-    if(c.deleted) return;
-    const el = document.createElement("div");
-    el.innerHTML = c.is_admin ? `<b style="color:red;">[運営] ${c.user_name}</b>: ${c.text}` :
-                                  `[${c.user_name}]: ${c.text}`;
-    list.appendChild(el);
+    if(!c.shown&&Math.abs(c.time-t)<0.3){ renderComment(c); c.shown=true; }
   });
+  if(Math.abs(t-lastTime)>2) fetchComments();
+  lastTime=t;
+}
+setInterval(syncLoop,100);
+
+// ===== コメント送信 =====
+async function sendComment() {
+  const text=document.getElementById("commentText").value;
+  const color=document.getElementById("color").value;
+  const size=document.getElementById("size").value;
+  const position=document.getElementById("position").value;
+  const time=player.getCurrentTime();
+  const res=await fetch("/comment",{method:"POST",headers:{"Content-Type":"application/json","Authorization":token},body:JSON.stringify({videoId,text,time,color,size,position})});
+  const c=await res.json();
+  allComments.push({...c,shown:false});
+  document.getElementById("commentText").value="";
 }
 
-// ===== Socket同期 =====
-socket.on("new_comment", c=>{
-  allComments.push({...c,shown:false});
-  renderCommentList();
-});
-socket.on("delete_comment", id=>{
-  allComments = allComments.map(c=>c.id===id?{...c,deleted:true}:c);
-  renderCommentList();
-});
+// ===== コメント削除 =====
+async function deleteComment(id){
+  await fetch("/delete_comment",{method:"POST",headers:{"Content-Type":"application/json","Authorization":token},body:JSON.stringify({id})});
+  allComments=allComments.map(c=>c.id===id?{...c,deleted:true}:c);
+}
 
-// ===== YouTube API =====
-function onYouTubeIframeAPIReady(){if(videoId) player=new YT.Player("player",{videoId});}
+// ===== 再生速度 =====
+function changeSpeed(){
+  const rate=parseFloat(document.getElementById("speed").value);
+  player.setPlaybackRate(rate);
+}
+
+// ===== Socket.io =====
+socket.on("new_comment",c=>allComments.push({...c,shown:false}));
+socket.on("delete_comment",id=>allComments=allComments.map(c=>c.id===id?{...c,deleted:true}:c));
