@@ -8,16 +8,25 @@
 <script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
 </head>
 <body>
+<h1>コメコメ動画</h1>
+
+<input type="text" id="searchQuery" placeholder="動画を検索">
+<button onclick="searchYoutube(document.getElementById('searchQuery').value)">検索</button>
+
+<ul id="searchResults"></ul>
+
 <div id="playerWrap">
   <div id="player"></div>
   <div id="comments"></div>
 </div>
+
 <select id="speed" onchange="changeSpeed()">
   <option value="0.5">0.5x</option>
   <option value="1" selected>1x</option>
   <option value="1.5">1.5x</option>
   <option value="2">2x</option>
 </select>
+
 <script src="script.js"></script>
 </body>
 </html>
