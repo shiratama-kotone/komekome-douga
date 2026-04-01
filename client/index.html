@@ -1,27 +1,23 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
 <title>コメコメ動画</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://www.youtube.com/iframe_api"></script>
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdn.socket.io/4.7.0/socket.io.min.js"></script>
 </head>
 <body>
-
-<input id="searchBox" placeholder="YouTube検索">
-<button onclick="search()">検索</button>
-
-<div id="results"></div>
-<h2 id="videoTitle"></h2>
-
 <div id="playerWrap">
   <div id="player"></div>
   <div id="comments"></div>
 </div>
-
-<div id="list"></div>
-
+<select id="speed" onchange="changeSpeed()">
+  <option value="0.5">0.5x</option>
+  <option value="1" selected>1x</option>
+  <option value="1.5">1.5x</option>
+  <option value="2">2x</option>
+</select>
 <script src="script.js"></script>
 </body>
 </html>
