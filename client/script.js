@@ -1,3 +1,4 @@
+// ===== コメコメ動画 script.js =====
 const socket = io("https://your-render-url");
 
 let player;
@@ -10,7 +11,6 @@ let blocked = JSON.parse(localStorage.getItem("block") || "[]");
 // ===== レーン制御 =====
 const lanes = [];
 const laneHeight = 30;
-
 function getFreeLane() {
   for (let i = 0; i < lanes.length; i++) {
     if (Date.now() > lanes[i]) return i;
@@ -27,28 +27,28 @@ function renderComment(c) {
   const el = document.createElement("div");
   el.className = "comment";
   el.innerHTML = c.text;
-  el.style.color = c.color || "white";
 
-  const duration = Math.min(8, Math.max(4, c.text.length / 5));
+  // 運営バッジ
+  if(c.is_admin){
+    el.innerHTML = `<span style="color:red;font-weight:bold;border:1px solid black;padding:0 2px;">運営</span> ${el.innerHTML}`;
+    el.style.color = "red";
+  } else el.style.color = c.color || "white";
 
+  const duration = c.position==="flow" ? Math.min(8, Math.max(4, c.text.length / 5)) : 3;
+
+  const lane = getFreeLane();
   if (c.position === "flow") {
-    const lane = getFreeLane();
     el.style.top = (lane * laneHeight) + "px";
     el.style.animation = `flow ${duration}s linear`;
-
-    lanes[lane] = Date.now() + duration * 800;
-    setTimeout(() => el.remove(), duration * 1000);
-
+    lanes[lane] = Date.now() + duration*800;
+    setTimeout(()=>el.remove(), duration*1000);
   } else {
-    const lane = getFreeLane();
-    const offset = lane * laneHeight;
-
-    if (c.position === "top") el.style.top = offset + "px";
-    if (c.position === "middle") el.style.top = (200 + offset) + "px";
-    if (c.position === "bottom") el.style.bottom = offset + "px";
-
-    lanes[lane] = Date.now() + 3000;
-    setTimeout(() => el.remove(), 3000);
+    const offset = lane*laneHeight;
+    if (c.position==="top") el.style.top = offset+"px";
+    if (c.position==="middle") el.style.top = (200+offset)+"px";
+    if (c.position==="bottom") el.style.bottom = offset+"px";
+    lanes[lane] = Date.now() + duration*1000;
+    setTimeout(()=>el.remove(), duration*1000);
   }
 
   document.getElementById("comments").appendChild(el);
@@ -66,27 +66,49 @@ function syncLoop() {
     }
   });
 
-  if (Math.abs(t - lastTime) > 2) handleSeek();
+  if (Math.abs(t-lastTime) > 2) handleSeek();
   lastTime = t;
 }
-
-setInterval(syncLoop, 100);
+setInterval(syncLoop,100);
 
 // ===== 削除反映 =====
-socket.on("delete_comment", id => {
-  allComments = allComments.map(c =>
-    c.id === id ? { ...c, deleted: true } : c
-  );
+socket.on("delete_comment", id=>{
+  allComments = allComments.map(c => c.id===id ? {...c,deleted:true}:c);
 });
 
 // ===== 動画 =====
-function onYouTubeIframeAPIReady() {
-  player = new YT.Player("player");
+function onYouTubeIframeAPIReady(){ player = new YT.Player("player"); }
+function changeSpeed(){ 
+  if(!player) return;
+  const rate=parseFloat(document.getElementById("speed").value);
+  player.setPlaybackRate(rate);
 }
 
-// ===== 倍速 =====
-function changeSpeed() {
-  if(!player) return;
-  const rate = parseFloat(document.getElementById("speed").value);
-  player.setPlaybackRate(rate);
+// ===== コメント取得 =====
+async function fetchComments(vId){
+  videoId = vId;
+  const res = await fetch(`https://your-render-url/comments?videoId=${vId}`);
+  const data = await res.json();
+  allComments = data.map(c=>({...c,shown:false}));
+  document.getElementById("comments").innerHTML="";
+}
+
+// ===== 動画検索 =====
+async function searchYoutube(query){
+  const res = await fetch(`https://youtube-search-api.vercel.app/api/search?query=${encodeURIComponent(query)}`);
+  const data = await res.json();
+  const list = document.getElementById("searchResults");
+  list.innerHTML="";
+  data.items.forEach(v=>{
+    const li = document.createElement("li");
+    li.textContent = v.title;
+    li.onclick = ()=>{ fetchComments(v.videoId); loadPlayer(v.videoId); }
+    list.appendChild(li);
+  });
+}
+
+// ===== プレイヤーロード =====
+function loadPlayer(vId){
+  if(player) player.loadVideoById(vId);
+  else player = new YT.Player("player",{videoId:vId});
 }
