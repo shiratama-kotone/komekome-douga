@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700&display=swap');
+
+body {
+  font-family: 'M PLUS 1p', sans-serif;
+}
+
+.comment {
+  position: absolute;
+  font-weight: bold;
+  white-space: nowrap;
+  text-shadow:
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000;
+}
+
+#comments {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+@keyframes flow {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-100%); }
+}
