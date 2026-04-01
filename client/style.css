@@ -1,28 +1,78 @@
-@import url('https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700&display=swap');
-
+/* ===== コメコメ動画スタイル ===== */
 body {
-  font-family: 'M PLUS 1p', sans-serif;
+  font-family: "M+ 1m", sans-serif;
+  background: #000;
+  color: #fff;
+  margin: 0;
+  padding: 0;
 }
 
-.comment {
-  position: absolute;
-  font-weight: bold;
-  white-space: nowrap;
-  text-shadow:
-    -1px -1px 0 #000,
-     1px -1px 0 #000,
-    -1px  1px 0 #000,
-     1px  1px 0 #000;
+#playerWrap {
+  position: relative;
+  width: 800px;
+  height: 450px;
+  margin: 20px auto;
+  background: #000;
+}
+
+#player {
+  width: 100%;
+  height: 100%;
 }
 
 #comments {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
+  overflow: hidden;
+}
+
+.comment {
+  position: absolute;
+  white-space: nowrap;
+  text-shadow:
+     -1px -1px 0 #000,
+      1px -1px 0 #000,
+     -1px  1px 0 #000,
+      1px  1px 0 #000;
+  font-weight: normal;
+  font-size: 20px;
 }
 
 @keyframes flow {
-  from { transform: translateX(100%); }
-  to { transform: translateX(-100%); }
+  0% { left: 100%; }
+  100% { left: -100%; }
+}
+
+/* 運営バッジ */
+.comment span {
+  display: inline-block;
+  border: 1px solid black;
+  padding: 0 2px;
+  font-weight: bold;
+  color: red;
+}
+
+/* 検索結果 */
+#searchResults {
+  list-style: none;
+  padding: 0;
+  margin: 10px auto;
+  width: 800px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+#searchResults li {
+  background: #111;
+  margin: 2px 0;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+#searchResults li:hover {
+  background: #333;
 }
