@@ -10,21 +10,42 @@
 <body>
 <h1>コメコメ動画</h1>
 
-<!-- 動画リンク入力 -->
-<input type="text" id="videoUrl" placeholder="YouTubeの動画URLを入力">
-<button onclick="loadVideo()">再生</button>
-
-<div id="playerWrap">
-  <div id="player"></div>
-  <div id="comments"></div>
+<div id="loginForm">
+  <input type="text" id="loginName" placeholder="名前">
+  <input type="password" id="loginPassword" placeholder="パスワード">
+  <button onclick="login()">ログイン</button>
+  <button onclick="register()">新規登録</button>
+  <p id="loginStatus"></p>
 </div>
 
-<select id="speed" onchange="changeSpeed()">
-  <option value="0.5">0.5x</option>
-  <option value="1" selected>1x</option>
-  <option value="1.5">1.5x</option>
-  <option value="2">2x</option>
-</select>
+<div id="mainContent" style="display:none">
+  <input type="text" id="videoUrl" placeholder="動画URL">
+  <button onclick="loadVideo()">動画再生</button>
+
+  <div id="playerWrap">
+    <div id="player"></div>
+    <div id="comments"></div>
+  </div>
+
+  <div id="commentForm">
+    <input type="text" id="commentText" placeholder="コメント">
+    <select id="commentSize">
+      <option value="small">小</option>
+      <option value="medium" selected>中</option>
+      <option value="large">大</option>
+    </select>
+    <select id="commentPos">
+      <option value="flow" selected>流れる</option>
+      <option value="top">上</option>
+      <option value="middle">中</option>
+      <option value="bottom">下</option>
+    </select>
+    <input type="color" id="commentColor">
+    <button onclick="postComment()">送信</button>
+  </div>
+
+  <div id="commentList"></div>
+</div>
 
 <script src="script.js"></script>
 </body>
