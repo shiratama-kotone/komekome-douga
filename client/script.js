@@ -5,8 +5,7 @@ let videoId = "";
 let allComments = [];
 let lastTime = 0;
 let token = localStorage.getItem("token");
-
-let blocked = JSON.parse(localStorage.getItem("block")||"[]");
+let blocked = JSON.parse(localStorage.getItem("block") || "[]");
 
 // ===== レーン制御 =====
 const lanes = [];
@@ -38,7 +37,7 @@ function renderComment(c) {
     el.style.animation = `flow ${duration}s linear`;
 
     lanes[lane] = Date.now() + duration * 800;
-    setTimeout(()=>el.remove(), duration * 1000);
+    setTimeout(() => el.remove(), duration * 1000);
 
   } else {
     const lane = getFreeLane();
@@ -49,7 +48,7 @@ function renderComment(c) {
     if (c.position === "bottom") el.style.bottom = offset + "px";
 
     lanes[lane] = Date.now() + 3000;
-    setTimeout(()=>el.remove(), 3000);
+    setTimeout(() => el.remove(), 3000);
   }
 
   document.getElementById("comments").appendChild(el);
@@ -83,4 +82,11 @@ socket.on("delete_comment", id => {
 // ===== 動画 =====
 function onYouTubeIframeAPIReady() {
   player = new YT.Player("player");
+}
+
+// ===== 倍速 =====
+function changeSpeed() {
+  if(!player) return;
+  const rate = parseFloat(document.getElementById("speed").value);
+  player.setPlaybackRate(rate);
 }
